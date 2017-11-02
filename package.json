@@ -1,0 +1,20 @@
+{
+  "name": "rvjs-ajax-json",
+  "version": "1.0.0",
+  "description": "XMLHttpRequest library",
+  "main": "src/ajax-json.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ajax",
+    "json",
+    "XMLHttpRequest"
+  ],
+  "dependencies": {
+    "rvjs-tools": "*",
+    "es6-promise": "^4.1.1"
+  },
+  "author": "GoshaV [Maniako]",
+  "license": "MIT"
+}
