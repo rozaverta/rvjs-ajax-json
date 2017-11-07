@@ -555,7 +555,9 @@ var AjaxJson = {
 		return progressBy;
 	},
 
-	query: function query(input, init) {
+	query: function query(input) {
+		var init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
 		if (queryStatus === 'progress') {
 			var e = error || function (e) {
 				throw e;
@@ -564,7 +566,24 @@ var AjaxJson = {
 			e(new AjaxJsonError('User aborted', 'abort', 3));
 		}
 
-		var raw = (typeof init === "undefined" ? "undefined" : _typeof(init)) === 'object' && init.raw === true;
+		// init property
+		var tof = typeof init === "undefined" ? "undefined" : _typeof(init);
+
+		if (tof === 'function') {
+			init = init(input);
+			tof = typeof init === "undefined" ? "undefined" : _typeof(init);
+		}
+
+		if (tof !== 'object') {
+			init = {};
+		}
+
+		if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+			Object.assign(init, input);
+			input = init.url || "";
+		}
+
+		var raw = init.raw === true;
 		if (!raw) {
 			input = TriggerOnUrl(input);
 		}

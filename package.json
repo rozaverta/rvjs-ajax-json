@@ -1,6 +1,6 @@
 {
   "name": "rvjs-ajax-json",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "XMLHttpRequest library",
   "main": "src/ajax-json.js",
   "scripts": {
