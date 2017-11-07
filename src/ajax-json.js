@@ -12,6 +12,10 @@ var _rvjsTools = require("rvjs-tools");
 
 var _rvjsTools2 = _interopRequireDefault(_rvjsTools);
 
+var _rvjsEmitter = require("rvjs-emitter");
+
+var _rvjsEmitter2 = _interopRequireDefault(_rvjsEmitter);
+
 var _es6Promise = require("es6-promise");
 
 var _es6Promise2 = _interopRequireDefault(_es6Promise);
@@ -81,27 +85,10 @@ var AjaxJsonError = function (_Error) {
 	return AjaxJsonError;
 }(Error);
 
-function makeQueryValue(name, value, isArray) {
-	if (value === null || value === undefined) {
-		value = '';
-	} else if (typeof value === 'boolean') {
-		value = value ? '1' : '0';
-	}
+// FormData
 
-	if (isArray) {
-		name += '[]';
-	} else {
-		name = encodeURIComponent(name);
-		if (Array.isArray(value)) {
-			name = value.map(function (val) {
-				return makeQueryValue(name, val, true);
-			}).join('&');
-		} else if (value) {
-			name += '=' + encodeURIComponent(String(value));
-		}
-	}
-
-	return name;
+function hasFormData(form) {
+	return typeof FormData !== "undefined" && FormData.prototype.isPrototypeOf(form);
 }
 
 // BLOB
@@ -133,40 +120,12 @@ function readBlobAsText(blob) {
 
 // QUERY
 
-function makeQuery(data) {
-	return Object.keys(data).map(function (name) {
-		return makeQueryValue(name, data[name], false);
-	}).join('&');
-}
-
-function makeForm(data) {
-	var value = void 0;
-	var form = new FormData();
-	var json = [];
-
-	Object.keys(data).forEach(function (name) {
-
-		value = data[name];
-		if (value === null || value === undefined) {
-			value = '';
-		} else if ((typeof value === "undefined" ? "undefined" : _typeof(value)) === 'object') {
-			// array too
-			json.push(name);
-			value = JSON.stringify(value);
-		} else if (typeof value === 'boolean') {
-			value = value ? '1' : '0';
-		} else {
-			value = String(value);
-		}
-
-		form.append(name, value);
-	});
-
-	if (json.length) {
-		form.append('__json', json);
+function getEmitter(data) {
+	if (data instanceof _rvjsEmitter2.default) {
+		return data;
+	} else {
+		return new _rvjsEmitter2.default(data);
 	}
-
-	return form;
 }
 
 function normalizeName(name) {
@@ -344,7 +303,7 @@ function Body() {
 			this._bodyInit = new Blob([this._bodyArrayBuffer]);
 		} else if (supportArrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
 			this._bodyArrayBuffer = bufferClone(body);
-		} else if (FormData.prototype.isPrototypeOf(body)) {
+		} else if (hasFormData(body)) {
 			this._bodyFormData = body;
 		} else {
 			throw new Error('unsupported BodyInit type');
@@ -458,13 +417,14 @@ function Request(input, options) {
 
 	if (body) {
 		var object = (typeof body === "undefined" ? "undefined" : _typeof(body)) === "object";
+
 		if (object && this.method === 'GET') {
-			this.url += (~this.url.indexOf('?') ? '&' : '?') + makeQuery(body);
+			this.url += (~this.url.indexOf('?') ? '&' : '?') + getEmitter(body).toQueryString();
 			body = null;
 		} else if (this.method === 'GET' || this.method === 'HEAD') {
 			throw new AjaxJsonError('Body not allowed for GET or HEAD requests', 'argument', 200);
-		} else if (this.method === 'POST' && object) {
-			body = makeForm(body);
+		} else if (this.method === 'POST' && object && !hasFormData(body)) {
+			body = getEmitter(body).toFormData();
 		}
 	}
 
