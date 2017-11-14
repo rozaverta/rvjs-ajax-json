@@ -496,13 +496,14 @@ var xhr = void 0;
 var error = void 0;
 var wait = [];
 var progressBy = 1;
+var getArg = function getArg(a) {
+	return a;
+};
 
 var TriggerOnUrl = function TriggerOnUrl(url) {
 	return String(url);
 };
-var TriggerOnJson = function TriggerOnJson(json) {
-	return json;
-};
+var TriggerOnJson = getArg;
 var TriggerOnProgress = Noop;
 
 function Waited() {
@@ -583,7 +584,14 @@ var AjaxJson = {
 			input = init.url || "";
 		}
 
-		var raw = init.raw === true;
+		var raw = init.raw === true,
+		    onJson = raw ? typeof init.onJson === "function" ? init.onJson : getArg : TriggerOnJson,
+		    complete = function complete(status) {
+			queryStatus = status;
+			progressBy = 1;
+			setTimeout(Waited, 1);
+		};
+
 		if (!raw) {
 			input = TriggerOnUrl(input);
 		}
@@ -595,21 +603,19 @@ var AjaxJson = {
 		return new Promise(function (_resolve, _reject) {
 
 			var reject = function reject(error) {
-				if (queryStatus === 'progress') queryStatus = 'failure';
-				progressBy = 1;
-				setTimeout(Waited, 1);
+				complete('failure');
 				_reject(error);
 			};
 
 			var resolve = function resolve(result) {
-				queryStatus = 'success';
-				progressBy = 1;
-				setTimeout(Waited, 1);
-				if (!raw) try {
-					result = TriggerOnJson(result);
+
+				try {
+					result = onJson(result);
 				} catch (err) {
-					return _reject(err);
+					return reject(err);
 				}
+
+				complete('success');
 				_resolve(result);
 			};
 
