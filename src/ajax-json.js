@@ -579,12 +579,14 @@ var AjaxJson = {
 			init = {};
 		}
 
-		if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+		if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object' && input !== null) {
 			Object.assign(init, input);
 			input = init.url || "";
 		}
 
-		var raw = init.raw === true,
+		var originalQuery = input,
+		    originalRequest = init,
+		    raw = init.raw === true,
 		    onJson = raw ? typeof init.onJson === "function" ? init.onJson : getArg : TriggerOnJson,
 		    complete = function complete(status) {
 			queryStatus = status;
@@ -602,6 +604,15 @@ var AjaxJson = {
 
 		return new Promise(function (_resolve, _reject) {
 
+			var calculate = function calculate() {
+				return {
+					query: originalQuery,
+					request: originalRequest,
+					resolve: _resolve,
+					reject: _reject
+				};
+			};
+
 			var reject = function reject(error) {
 				complete('failure');
 				_reject(error);
@@ -610,7 +621,7 @@ var AjaxJson = {
 			var resolve = function resolve(result) {
 
 				try {
-					result = onJson(result);
+					result = onJson(result, calculate);
 				} catch (err) {
 					return reject(err);
 				}
